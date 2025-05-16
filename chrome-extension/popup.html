@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solana RugCheck Monitor</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      width: 320px;
+      background-color: #f9fafb;
+      color: #111827;
+    }
+    
+    header {
+      padding: 12px 16px;
+      background-color: #1e40af;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .logo svg {
+      margin-right: 8px;
+    }
+    
+    .container {
+      padding: 16px;
+    }
+    
+    .search-box {
+      margin-bottom: 16px;
+    }
+    
+    .search-box input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    .search-box .input-wrapper {
+      position: relative;
+      display: flex;
+      margin-bottom: 8px;
+    }
+    
+    .search-box button {
+      background-color: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      padding: 0 12px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .search-box button:hover {
+      background-color: #1c3879;
+    }
+    
+    .search-box input {
+      flex: 1;
+      border-right: none;
+      border-radius: 6px 0 0 6px;
+    }
+    
+    .current-token {
+      background-color: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: none;
+    }
+    
+    .current-token-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+    
+    .current-token-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: #111827;
+    }
+    
+    .token-badge {
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 8px;
+      border-radius: 4px;
+      color: white;
+    }
+    
+    .token-badge-safe {
+      background-color: #10b981;
+    }
+    
+    .token-badge-warning {
+      background-color: #f59e0b;
+    }
+    
+    .token-badge-danger {
+      background-color: #ef4444;
+    }
+    
+    .token-badge-unknown {
+      background-color: #6b7280;
+    }
+    
+    .token-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .token-detail-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    
+    .token-detail-label {
+      color: #6b7280;
+    }
+    
+    .token-detail-value {
+      font-weight: 500;
+      text-align: right;
+      word-break: break-all;
+    }
+    
+    .token-address {
+      font-family: monospace;
+      font-size: 12px;
+      background-color: #f3f4f6;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    
+    .token-action {
+      margin-top: 16px;
+    }
+    
+    .token-action a {
+      display: inline-block;
+      background-color: #1e40af;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    
+    .token-action a:hover {
+      background-color: #1c3879;
+    }
+    
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .history-title {
+      font-weight: 600;
+      font-size: 16px;
+      color: #111827;
+    }
+    
+    .clear-button {
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    
+    .clear-button:hover {
+      color: #ef4444;
+    }
+    
+    .history-list {
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .history-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .history-item:last-child {
+      border-bottom: none;
+    }
+    
+    .history-item:hover {
+      background-color: #f9fafb;
+    }
+    
+    .history-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    
+    .history-item-title {
+      font-weight: 500;
+      font-size: 14px;
+      color: #111827;
+    }
+    
+    .history-item-time {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    .history-item-address {
+      font-family: monospace;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    
+    .error-message {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    
+    .loading {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
+    
+    .loading-spinner {
+      border: 2px solid #f3f4f6;
+      border-top: 2px solid #1e40af;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+      Solana RugCheck Monitor
+    </div>
+  </header>
+  
+  <div class="container">
+    <div class="search-box">
+      <div class="input-wrapper">
+        <input type="text" id="token-input" placeholder="Enter Solana token address or paste URL">
+        <button id="check-button">Check</button>
+      </div>
+      <div class="error-message" id="error-message"></div>
+    </div>
+    
+    <div class="loading" id="loading">
+      <div class="loading-spinner"></div>
+      <span>Checking token...</span>
+    </div>
+    
+    <div class="current-token" id="current-token">
+      <div class="current-token-header">
+        <div class="current-token-title" id="token-name">Token Name</div>
+        <div class="token-badge" id="risk-badge">Unknown</div>
+      </div>
+      
+      <div class="token-details">
+        <div class="token-detail-row">
+          <div class="token-detail-label">Address:</div>
+          <div class="token-detail-value">
+            <span class="token-address" id="token-address">...</span>
+          </div>
+        </div>
+        
+        <div class="token-detail-row" id="token-symbol-row">
+          <div class="token-detail-label">Symbol:</div>
+          <div class="token-detail-value" id="token-symbol">UNKNOWN</div>
+        </div>
+        
+        <div class="token-detail-row" id="risk-score-row">
+          <div class="token-detail-label">Risk Score:</div>
+          <div class="token-detail-value" id="risk-score">0</div>
+        </div>
+      </div>
+      
+      <div class="token-action">
+        <a href="#" id="view-on-rugcheck" target="_blank">View on RugCheck</a>
+      </div>
+    </div>
+    
+    <div class="history-section">
+      <div class="history-header">
+        <div class="history-title">Recently Checked Tokens</div>
+        <button class="clear-button" id="clear-history">Clear History</button>
+      </div>
+      
+      <div class="history-list" id="history-list">
+        <div class="empty-state" id="empty-state">
+          No tokens checked yet
+        </div>
+        <!-- History items will be added here dynamically -->
+      </div>
+    </div>
+  </div>
+  
+  <script src="js/popup.js"></script>
+</body>
+</html>

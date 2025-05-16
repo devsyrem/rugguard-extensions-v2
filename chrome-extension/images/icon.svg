@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Circle background -->
+  <circle cx="64" cy="64" r="62" fill="url(#bgGradient)" stroke="white" stroke-width="2"/>
+  
+  <!-- Shield icon -->
+  <path d="M64 24L34 36V58C34 78.1 46.5 97 64 102C81.5 97 94 78.1 94 58V36L64 24Z" 
+        fill="white" stroke="#1e3a8a" stroke-width="2" stroke-linejoin="round"/>
+  
+  <!-- Check mark -->
+  <path d="M52 64L60 72L76 56" stroke="#1e3a8a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Small warning triangle for the "R" in RugCheck -->
+  <path d="M42 84L50 96H34L42 84Z" fill="#ff4438"/>
+  
+  <!-- Text "RC" (for RugCheck) -->
+  <text x="64" y="98" font-family="Arial, sans-serif" font-size="24" font-weight="bold" 
+        fill="white" text-anchor="middle">RC</text>
+</svg>
