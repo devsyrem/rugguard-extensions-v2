@@ -1,5 +1,5 @@
 /**
- * Solana RugCheck Monitor - Popup Script
+ * RugGuard - Popup Script
  * Handles the extension popup UI
  */
 
@@ -17,9 +17,27 @@ const tokenSymbolElement = document.getElementById('token-symbol');
 const riskScoreRow = document.getElementById('risk-score-row');
 const riskScoreElement = document.getElementById('risk-score');
 const viewOnRugcheckLink = document.getElementById('view-on-rugcheck');
+const addToWatchlistButton = document.getElementById('add-to-watchlist');
 const historyList = document.getElementById('history-list');
 const emptyState = document.getElementById('empty-state');
 const clearHistoryButton = document.getElementById('clear-history');
+
+// Watchlist elements
+const watchlistContainer = document.getElementById('watchlist-container');
+const emptyWatchlist = document.getElementById('empty-watchlist');
+const clearWatchlistButton = document.getElementById('clear-watchlist');
+const monitorStatusElement = document.getElementById('monitor-status');
+const watchlistTokenInput = document.getElementById('watchlist-token-input');
+const addToWatchlistManualButton = document.getElementById('add-to-watchlist-manual');
+const watchlistErrorMessage = document.getElementById('watchlist-error-message');
+const watchlistLoading = document.getElementById('watchlist-loading');
+
+// Tab navigation elements
+const tabButtons = document.querySelectorAll('.tab-button');
+const tabContents = document.querySelectorAll('.tab-content');
+
+// Current token data
+let currentToken = null;
 
 // Event handlers
 checkButton.addEventListener('click', checkCurrentUrl);
@@ -29,9 +47,42 @@ tokenInput.addEventListener('keydown', (e) => {
   }
 });
 clearHistoryButton.addEventListener('click', clearHistory);
+clearWatchlistButton.addEventListener('click', clearWatchlist);
+addToWatchlistManualButton.addEventListener('click', addManualTokenToWatchlist);
+watchlistTokenInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    addManualTokenToWatchlist();
+  }
+});
+addToWatchlistButton.addEventListener('click', addCurrentTokenToWatchlist);
 
-// Load token history on popup open
+// Tab navigation
+tabButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    const tabName = button.dataset.tab;
+    
+    // Update active tab button
+    tabButtons.forEach(btn => {
+      btn.classList.remove('active');
+    });
+    button.classList.add('active');
+    
+    // Show the corresponding tab content
+    tabContents.forEach(content => {
+      content.classList.remove('active');
+    });
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // If switching to watchlist tab, refresh the watchlist
+    if (tabName === 'watchlist') {
+      loadWatchlist();
+    }
+  });
+});
+
+// Load token history and watchlist on popup open
 loadTokenHistory();
+loadWatchlist();
 
 // Check if there's a current URL in the active tab
 getCurrentTabUrl();
@@ -207,6 +258,9 @@ function validateInput(input) {
  * Update token information in the UI
  */
 function updateTokenInfo(token) {
+  // Store current token
+  currentToken = token;
+  
   // Set token details
   tokenNameElement.textContent = token.name || 'Unknown Token';
   tokenAddressElement.textContent = token.address;
@@ -247,6 +301,20 @@ function updateTokenInfo(token) {
   } else {
     riskScoreRow.style.display = 'none';
   }
+  
+  // Check if token is already in watchlist
+  chrome.runtime.sendMessage(
+    { action: 'isTokenInWatchlist', address: token.address },
+    function(response) {
+      if (response && response.exists) {
+        addToWatchlistButton.textContent = 'Remove from Watchlist';
+        addToWatchlistButton.style.backgroundColor = '#ef4444';
+      } else {
+        addToWatchlistButton.textContent = 'Add to Watchlist';
+        addToWatchlistButton.style.backgroundColor = '#10b981';
+      }
+    }
+  );
 }
 
 /**
@@ -399,4 +467,251 @@ function formatRelativeTime(dateString) {
   }
   
   return date.toLocaleDateString();
+}
+
+/**
+ * Add current token to watchlist
+ */
+function addCurrentTokenToWatchlist() {
+  if (!currentToken) {
+    showError('No token selected');
+    return;
+  }
+  
+  // Check if token is already in watchlist (to toggle)
+  chrome.runtime.sendMessage(
+    { action: 'isTokenInWatchlist', address: currentToken.address },
+    function(response) {
+      if (response && response.exists) {
+        // Remove from watchlist
+        chrome.runtime.sendMessage(
+          { action: 'removeFromWatchlist', address: currentToken.address },
+          function(response) {
+            if (response && response.success) {
+              addToWatchlistButton.textContent = 'Add to Watchlist';
+              addToWatchlistButton.style.backgroundColor = '#10b981';
+              
+              // Flash success message
+              showError('Removed from watchlist');
+              setTimeout(hideError, 2000);
+              
+              // Refresh watchlist if visible
+              const watchlistTab = document.getElementById('watchlist-tab');
+              if (watchlistTab.classList.contains('active')) {
+                loadWatchlist();
+              }
+            } else {
+              showError('Failed to remove from watchlist');
+            }
+          }
+        );
+      } else {
+        // Add to watchlist
+        chrome.runtime.sendMessage(
+          { 
+            action: 'addToWatchlist', 
+            token: {
+              address: currentToken.address,
+              name: currentToken.name,
+              symbol: currentToken.symbol,
+              riskLevel: currentToken.risk_level,
+              riskScore: currentToken.risk_score,
+              isRug: currentToken.is_rug,
+              addedAt: new Date().toISOString()
+            }
+          },
+          function(response) {
+            if (response && response.success) {
+              addToWatchlistButton.textContent = 'Remove from Watchlist';
+              addToWatchlistButton.style.backgroundColor = '#ef4444';
+              
+              // Flash success message
+              showError('Added to watchlist');
+              setTimeout(hideError, 2000);
+              
+              // Refresh watchlist if visible
+              const watchlistTab = document.getElementById('watchlist-tab');
+              if (watchlistTab.classList.contains('active')) {
+                loadWatchlist();
+              }
+            } else {
+              showError('Failed to add to watchlist');
+            }
+          }
+        );
+      }
+    }
+  );
+}
+
+/**
+ * Load watchlist from storage
+ */
+function loadWatchlist() {
+  chrome.runtime.sendMessage(
+    { action: 'getWatchlist' },
+    function(response) {
+      if (response && response.success) {
+        displayWatchlist(response.watchlist);
+        
+        // Update monitor status
+        chrome.runtime.sendMessage(
+          { action: 'getMonitorStatus' },
+          function(statusResponse) {
+            if (statusResponse && statusResponse.success) {
+              const isActive = statusResponse.isActive;
+              monitorStatusElement.textContent = isActive ? 
+                `Active (checking every ${statusResponse.interval/1000} seconds)` : 
+                'Monitoring paused';
+              
+              if (!isActive) {
+                monitorStatusElement.style.color = '#ef4444';
+              } else {
+                monitorStatusElement.style.color = '#10b981';
+              }
+            }
+          }
+        );
+      }
+    }
+  );
+}
+
+/**
+ * Display watchlist in the UI
+ */
+function displayWatchlist(watchlist) {
+  // Clear current watchlist
+  while (watchlistContainer.firstChild) {
+    watchlistContainer.removeChild(watchlistContainer.firstChild);
+  }
+  
+  // Show empty state if no watchlist
+  if (!watchlist || watchlist.length === 0) {
+    watchlistContainer.appendChild(emptyWatchlist);
+    return;
+  }
+  
+  // Add watchlist items
+  watchlist.forEach((token) => {
+    const watchlistItem = document.createElement('div');
+    watchlistItem.className = 'watchlist-item';
+    
+    const watchlistItemInfo = document.createElement('div');
+    watchlistItemInfo.className = 'watchlist-item-info';
+    
+    const itemTitle = document.createElement('div');
+    itemTitle.className = 'history-item-title';
+    itemTitle.textContent = token.name || 'Unknown Token';
+    itemTitle.style.marginBottom = '4px';
+    itemTitle.style.color = '#111827';
+    
+    const itemAddress = document.createElement('div');
+    itemAddress.className = 'history-item-address';
+    itemAddress.textContent = token.address;
+    itemAddress.style.color = '#4b5563';
+    
+    // Add risk badge
+    if (token.riskLevel) {
+      const badgeSpan = document.createElement('span');
+      let badgeColor = '#6b7280';
+      
+      switch (token.riskLevel.toLowerCase()) {
+        case 'safe':
+          badgeColor = '#10b981';
+          break;
+        case 'warning':
+          badgeColor = '#f59e0b';
+          break;
+        case 'danger':
+          badgeColor = '#ef4444';
+          break;
+      }
+      
+      badgeSpan.style.backgroundColor = badgeColor;
+      badgeSpan.style.color = 'white';
+      badgeSpan.style.borderRadius = '4px';
+      badgeSpan.style.padding = '1px 4px';
+      badgeSpan.style.fontSize = '10px';
+      badgeSpan.style.marginLeft = '6px';
+      badgeSpan.textContent = token.riskLevel;
+      
+      itemTitle.appendChild(badgeSpan);
+    }
+    
+    watchlistItemInfo.appendChild(itemTitle);
+    watchlistItemInfo.appendChild(itemAddress);
+    
+    const watchlistActions = document.createElement('div');
+    watchlistActions.className = 'watchlist-actions';
+    
+    // View details button
+    const viewButton = document.createElement('button');
+    viewButton.className = 'watchlist-action-button';
+    viewButton.title = 'View Details';
+    viewButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+    viewButton.addEventListener('click', () => {
+      tokenInput.value = token.address;
+      checkCurrentUrl();
+      
+      // Switch to token checker tab
+      tabButtons.forEach(btn => {
+        if (btn.dataset.tab === 'checker') {
+          btn.click();
+        }
+      });
+    });
+    
+    // Remove button
+    const removeButton = document.createElement('button');
+    removeButton.className = 'watchlist-action-button';
+    removeButton.title = 'Remove from Watchlist';
+    removeButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+    removeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      
+      // Remove from watchlist
+      chrome.runtime.sendMessage(
+        { action: 'removeFromWatchlist', address: token.address },
+        function(response) {
+          if (response && response.success) {
+            loadWatchlist();
+            
+            // Update button in token checker if this is the current token
+            if (currentToken && currentToken.address === token.address) {
+              addToWatchlistButton.textContent = 'Add to Watchlist';
+              addToWatchlistButton.style.backgroundColor = '#10b981';
+            }
+          }
+        }
+      );
+    });
+    
+    watchlistActions.appendChild(viewButton);
+    watchlistActions.appendChild(removeButton);
+    
+    watchlistItem.appendChild(watchlistItemInfo);
+    watchlistItem.appendChild(watchlistActions);
+    watchlistContainer.appendChild(watchlistItem);
+  });
+}
+
+/**
+ * Clear watchlist
+ */
+function clearWatchlist() {
+  chrome.runtime.sendMessage(
+    { action: 'clearWatchlist' },
+    function(response) {
+      if (response && response.success) {
+        loadWatchlist();
+        
+        // Update button in token checker if showing a token
+        if (currentToken) {
+          addToWatchlistButton.textContent = 'Add to Watchlist';
+          addToWatchlistButton.style.backgroundColor = '#10b981';
+        }
+      }
+    }
+  );
 }

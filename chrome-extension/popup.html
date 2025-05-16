@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solana RugCheck Monitor</title>
+  <title>RugGuard</title>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -12,6 +12,104 @@
       width: 320px;
       background-color: #f9fafb;
       color: #111827;
+    }
+    
+    .tabs {
+      display: flex;
+      background-color: #f3f4f6;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 12px;
+    }
+    
+    .tab-button {
+      flex: 1;
+      padding: 10px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    
+    .tab-button.active {
+      color: #1e40af;
+    }
+    
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: #1e40af;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .watchlist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .watchlist-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      background-color: white;
+    }
+    
+    .watchlist-item-info {
+      flex: 1;
+    }
+    
+    .watchlist-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .watchlist-action-button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      transition: color 0.2s;
+    }
+    
+    .watchlist-action-button:hover {
+      color: #ef4444;
+    }
+    
+    .add-to-watchlist {
+      display: inline-block;
+      background-color: #10b981;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+      margin-top: 8px;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.2s;
+    }
+    
+    .add-to-watchlist:hover {
+      background-color: #059669;
     }
     
     header {
@@ -294,69 +392,113 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
       </svg>
-      Solana RugCheck Monitor
+      RugGuard
     </div>
   </header>
   
   <div class="container">
-    <div class="search-box">
-      <div class="input-wrapper">
-        <input type="text" id="token-input" placeholder="Enter Solana token address or paste URL">
-        <button id="check-button">Check</button>
-      </div>
-      <div class="error-message" id="error-message"></div>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="checker">Token Checker</button>
+      <button class="tab-button" data-tab="watchlist">Watchlist</button>
     </div>
     
-    <div class="loading" id="loading">
-      <div class="loading-spinner"></div>
-      <span>Checking token...</span>
-    </div>
-    
-    <div class="current-token" id="current-token">
-      <div class="current-token-header">
-        <div class="current-token-title" id="token-name">Token Name</div>
-        <div class="token-badge" id="risk-badge">Unknown</div>
+    <!-- Token Checker Tab -->
+    <div class="tab-content active" id="checker-tab">
+      <div class="search-box">
+        <div class="input-wrapper">
+          <input type="text" id="token-input" placeholder="Enter Solana token address or paste URL">
+          <button id="check-button">Check</button>
+        </div>
+        <div class="error-message" id="error-message"></div>
       </div>
       
-      <div class="token-details">
-        <div class="token-detail-row">
-          <div class="token-detail-label">Address:</div>
-          <div class="token-detail-value">
-            <span class="token-address" id="token-address">...</span>
+      <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <span>Checking token...</span>
+      </div>
+      
+      <div class="current-token" id="current-token">
+        <div class="current-token-header">
+          <div class="current-token-title" id="token-name">Token Name</div>
+          <div class="token-badge" id="risk-badge">Unknown</div>
+        </div>
+        
+        <div class="token-details">
+          <div class="token-detail-row">
+            <div class="token-detail-label">Address:</div>
+            <div class="token-detail-value">
+              <span class="token-address" id="token-address">...</span>
+            </div>
+          </div>
+          
+          <div class="token-detail-row" id="token-symbol-row">
+            <div class="token-detail-label">Symbol:</div>
+            <div class="token-detail-value" id="token-symbol">UNKNOWN</div>
+          </div>
+          
+          <div class="token-detail-row" id="risk-score-row">
+            <div class="token-detail-label">Risk Score:</div>
+            <div class="token-detail-value" id="risk-score">0</div>
           </div>
         </div>
         
-        <div class="token-detail-row" id="token-symbol-row">
-          <div class="token-detail-label">Symbol:</div>
-          <div class="token-detail-value" id="token-symbol">UNKNOWN</div>
-        </div>
-        
-        <div class="token-detail-row" id="risk-score-row">
-          <div class="token-detail-label">Risk Score:</div>
-          <div class="token-detail-value" id="risk-score">0</div>
+        <div class="token-action">
+          <a href="#" id="view-on-rugcheck" target="_blank" class="mr-2">View on RugCheck</a>
+          <button id="add-to-watchlist" class="add-to-watchlist">Add to Watchlist</button>
         </div>
       </div>
       
-      <div class="token-action">
-        <a href="#" id="view-on-rugcheck" target="_blank">View on RugCheck</a>
+      <div class="history-section">
+        <div class="history-header">
+          <div class="history-title">Recently Checked Tokens</div>
+          <button class="clear-button" id="clear-history">Clear History</button>
+        </div>
+        
+        <div class="history-list" id="history-list">
+          <div class="empty-state" id="empty-state">
+            No tokens checked yet
+          </div>
+          <!-- History items will be added here dynamically -->
+        </div>
       </div>
     </div>
     
-    <div class="history-section">
-      <div class="history-header">
-        <div class="history-title">Recently Checked Tokens</div>
-        <button class="clear-button" id="clear-history">Clear History</button>
+    <!-- Watchlist Tab -->
+    <div class="tab-content" id="watchlist-tab">
+      <!-- Add Token Form -->
+      <div class="search-box">
+        <div class="input-wrapper">
+          <input type="text" id="watchlist-token-input" placeholder="Enter Solana token address to watch">
+          <button id="add-to-watchlist-manual">Add</button>
+        </div>
+        <div class="error-message" id="watchlist-error-message"></div>
       </div>
       
-      <div class="history-list" id="history-list">
-        <div class="empty-state" id="empty-state">
-          No tokens checked yet
+      <div class="watchlist-header">
+        <div class="history-title">Monitored Tokens</div>
+        <button class="clear-button" id="clear-watchlist">Clear All</button>
+      </div>
+      
+      <div class="history-list" id="watchlist-container">
+        <div class="empty-state" id="empty-watchlist">
+          No tokens in your watchlist yet
         </div>
-        <!-- History items will be added here dynamically -->
+        <!-- Watchlist items will be added here dynamically -->
+      </div>
+      
+      <div class="token-detail-row" style="margin-top: 16px;">
+        <div class="token-detail-label">Monitoring Status:</div>
+        <div class="token-detail-value" id="monitor-status">Active (checking every 5 seconds)</div>
+      </div>
+      
+      <div class="loading" id="watchlist-loading">
+        <div class="loading-spinner"></div>
+        <span>Checking token...</span>
       </div>
     </div>
   </div>
   
   <script src="js/popup.js"></script>
+  <script src="js/manual-watchlist.js"></script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /**
- * Solana RugCheck Monitor - Content Script
+ * RugGuard - Content Script
  * Automatically extracts token addresses from pages and checks them
  */
 
@@ -10,7 +10,7 @@ let warningModalShown = false;
 // Add CSS for the warning modal
 const style = document.createElement('style');
 style.textContent = `
-  .rugcheck-warning-overlay {
+  .rugguard-warning-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -24,7 +24,7 @@ style.textContent = `
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   
-  .rugcheck-warning-modal {
+  .rugguard-warning-modal {
     width: 90%;
     max-width: 450px;
     background-color: white;
@@ -33,7 +33,7 @@ style.textContent = `
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
   }
   
-  .rugcheck-warning-header {
+  .rugguard-warning-header {
     background-color: #e11d48;
     color: white;
     padding: 12px 16px;
@@ -42,45 +42,45 @@ style.textContent = `
     justify-content: space-between;
   }
   
-  .rugcheck-warning-title {
+  .rugguard-warning-title {
     display: flex;
     align-items: center;
     font-weight: bold;
     font-size: 16px;
   }
   
-  .rugcheck-warning-content {
+  .rugguard-warning-content {
     padding: 16px;
   }
   
-  .rugcheck-warning-token-info {
+  .rugguard-warning-token-info {
     margin-bottom: 16px;
   }
   
-  .rugcheck-warning-row {
+  .rugguard-warning-row {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
   }
   
-  .rugcheck-warning-label {
+  .rugguard-warning-label {
     color: #4b5563;
     font-size: 14px;
   }
   
-  .rugcheck-warning-value {
+  .rugguard-warning-value {
     font-size: 14px;
     font-weight: 500;
   }
   
-  .rugcheck-warning-risk {
+  .rugguard-warning-risk {
     background-color: #fee2e2;
     border-left: 4px solid #ef4444;
     padding: 12px;
     margin-bottom: 16px;
   }
   
-  .rugcheck-warning-risk-header {
+  .rugguard-warning-risk-header {
     display: flex;
     align-items: center;
     color: #b91c1c;
@@ -89,28 +89,28 @@ style.textContent = `
     margin-bottom: 4px;
   }
   
-  .rugcheck-warning-issues {
+  .rugguard-warning-issues {
     margin-top: 12px;
   }
   
-  .rugcheck-warning-issue {
+  .rugguard-warning-issue {
     display: flex;
     align-items: center;
     margin-bottom: 6px;
     font-size: 14px;
   }
   
-  .rugcheck-warning-issue svg {
+  .rugguard-warning-issue svg {
     margin-right: 8px;
     min-width: 16px;
   }
   
-  .rugcheck-warning-actions {
+  .rugguard-warning-actions {
     display: flex;
     gap: 12px;
   }
   
-  .rugcheck-warning-button {
+  .rugguard-warning-button {
     flex: 1;
     padding: 10px;
     border-radius: 6px;
@@ -122,25 +122,25 @@ style.textContent = `
     border: none;
   }
   
-  .rugcheck-warning-button-secondary {
+  .rugguard-warning-button-secondary {
     background-color: #1f2937;
     color: white;
   }
   
-  .rugcheck-warning-button-secondary:hover {
+  .rugguard-warning-button-secondary:hover {
     background-color: #111827;
   }
   
-  .rugcheck-warning-button-danger {
+  .rugguard-warning-button-danger {
     background-color: #e11d48;
     color: white;
   }
   
-  .rugcheck-warning-button-danger:hover {
+  .rugguard-warning-button-danger:hover {
     background-color: #be123c;
   }
   
-  .rugcheck-safe-notification {
+  .rugguard-safe-notification {
     position: fixed;
     bottom: 24px;
     right: 24px;
@@ -152,11 +152,11 @@ style.textContent = `
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 999998;
     max-width: 320px;
-    animation: rugcheck-slide-in 0.3s ease-out forwards;
+    animation: rugguard-slide-in 0.3s ease-out forwards;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
   
-  @keyframes rugcheck-slide-in {
+  @keyframes rugguard-slide-in {
     from {
       transform: translateX(100%);
       opacity: 0;
@@ -167,22 +167,22 @@ style.textContent = `
     }
   }
   
-  .rugcheck-safe-notification-content {
+  .rugguard-safe-notification-content {
     margin-left: 12px;
   }
   
-  .rugcheck-safe-notification-title {
+  .rugguard-safe-notification-title {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
   }
   
-  .rugcheck-safe-notification-message {
+  .rugguard-safe-notification-message {
     font-size: 12px;
     color: #4b5563;
   }
   
-  .rugcheck-token-address {
+  .rugguard-token-address {
     font-family: monospace;
     background-color: #f3f4f6;
     padding: 2px 4px;
@@ -327,18 +327,18 @@ function createWarningModal(tokenData) {
   
   // Create modal elements
   const overlay = document.createElement('div');
-  overlay.className = 'rugcheck-warning-overlay';
-  overlay.id = 'rugcheck-warning-overlay';
+  overlay.className = 'rugguard-warning-overlay';
+  overlay.id = 'rugguard-warning-overlay';
   
   const modal = document.createElement('div');
-  modal.className = 'rugcheck-warning-modal';
+  modal.className = 'rugguard-warning-modal';
   
   // Header
   const header = document.createElement('div');
-  header.className = 'rugcheck-warning-header';
+  header.className = 'rugguard-warning-header';
   
   const title = document.createElement('div');
-  title.className = 'rugcheck-warning-title';
+  title.className = 'rugguard-warning-title';
   title.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
@@ -366,11 +366,11 @@ function createWarningModal(tokenData) {
   
   // Content
   const content = document.createElement('div');
-  content.className = 'rugcheck-warning-content';
+  content.className = 'rugguard-warning-content';
   
   // Token Info
   const tokenInfo = document.createElement('div');
-  tokenInfo.className = 'rugcheck-warning-token-info';
+  tokenInfo.className = 'rugguard-warning-token-info';
   
   const tokenInfoHeader = document.createElement('h3');
   tokenInfoHeader.style.fontSize = '16px';
@@ -383,15 +383,15 @@ function createWarningModal(tokenData) {
   
   // Address row
   const addressRow = document.createElement('div');
-  addressRow.className = 'rugcheck-warning-row';
+  addressRow.className = 'rugguard-warning-row';
   
   const addressLabel = document.createElement('span');
-  addressLabel.className = 'rugcheck-warning-label';
+  addressLabel.className = 'rugguard-warning-label';
   addressLabel.textContent = 'Address:';
   addressLabel.style.color = '#4b5563'; // Darker text for visibility
   
   const addressValue = document.createElement('code');
-  addressValue.className = 'rugcheck-token-address';
+  addressValue.className = 'rugguard-token-address';
   addressValue.style.color = '#111827'; // Very dark gray, almost black for contrast
   addressValue.style.fontWeight = '500'; // Medium weight for better visibility
   addressValue.style.backgroundColor = '#f3f4f6'; // Light gray background for code
@@ -406,15 +406,15 @@ function createWarningModal(tokenData) {
   
   // Name row
   const nameRow = document.createElement('div');
-  nameRow.className = 'rugcheck-warning-row';
+  nameRow.className = 'rugguard-warning-row';
   
   const nameLabel = document.createElement('span');
-  nameLabel.className = 'rugcheck-warning-label';
+  nameLabel.className = 'rugguard-warning-label';
   nameLabel.textContent = 'Name:';
   nameLabel.style.color = '#4b5563'; // Darker text for visibility
   
   const nameValue = document.createElement('span');
-  nameValue.className = 'rugcheck-warning-value';
+  nameValue.className = 'rugguard-warning-value';
   nameValue.textContent = tokenData.name || 'Unknown Token';
   nameValue.style.color = '#111827'; // Very dark gray, almost black for contrast
   nameValue.style.fontWeight = '500'; // Medium weight for better visibility
@@ -426,15 +426,15 @@ function createWarningModal(tokenData) {
   // Symbol row (if available)
   if (tokenData.symbol) {
     const symbolRow = document.createElement('div');
-    symbolRow.className = 'rugcheck-warning-row';
+    symbolRow.className = 'rugguard-warning-row';
     
     const symbolLabel = document.createElement('span');
-    symbolLabel.className = 'rugcheck-warning-label';
+    symbolLabel.className = 'rugguard-warning-label';
     symbolLabel.textContent = 'Symbol:';
     symbolLabel.style.color = '#4b5563'; // Darker text for visibility
     
     const symbolValue = document.createElement('span');
-    symbolValue.className = 'rugcheck-warning-value';
+    symbolValue.className = 'rugguard-warning-value';
     symbolValue.textContent = tokenData.symbol;
     symbolValue.style.color = '#111827'; // Very dark gray, almost black for contrast
     symbolValue.style.fontWeight = '500'; // Medium weight for better visibility
@@ -448,7 +448,7 @@ function createWarningModal(tokenData) {
   
   // Risk Assessment
   const riskAssessment = document.createElement('div');
-  riskAssessment.className = 'rugcheck-warning-risk-assessment';
+  riskAssessment.className = 'rugguard-warning-risk-assessment';
   
   const riskHeader = document.createElement('h3');
   riskHeader.style.fontSize = '16px';
@@ -460,10 +460,10 @@ function createWarningModal(tokenData) {
   
   // Risk box
   const riskBox = document.createElement('div');
-  riskBox.className = 'rugcheck-warning-risk';
+  riskBox.className = 'rugguard-warning-risk';
   
   const riskBoxHeader = document.createElement('div');
-  riskBoxHeader.className = 'rugcheck-warning-risk-header';
+  riskBoxHeader.className = 'rugguard-warning-risk-header';
   riskBoxHeader.style.color = '#111827'; // Very dark gray, almost black for contrast
   riskBoxHeader.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
@@ -504,13 +504,13 @@ function createWarningModal(tokenData) {
   
   // Issues list
   const issues = document.createElement('div');
-  issues.className = 'rugcheck-warning-issues';
+  issues.className = 'rugguard-warning-issues';
   
   // Add issues from token data
   if (tokenData.issues && tokenData.issues.length > 0) {
     tokenData.issues.forEach(issue => {
       const issueItem = document.createElement('div');
-      issueItem.className = 'rugcheck-warning-issue';
+      issueItem.className = 'rugguard-warning-issue';
       issueItem.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
@@ -524,7 +524,7 @@ function createWarningModal(tokenData) {
   } else {
     // Default issue
     const defaultIssue = document.createElement('div');
-    defaultIssue.className = 'rugcheck-warning-issue';
+    defaultIssue.className = 'rugguard-warning-issue';
     defaultIssue.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="10"></circle>
@@ -541,11 +541,11 @@ function createWarningModal(tokenData) {
   
   // Action buttons
   const actions = document.createElement('div');
-  actions.className = 'rugcheck-warning-actions';
+  actions.className = 'rugguard-warning-actions';
   
   // View on RugCheck button
   const viewButton = document.createElement('a');
-  viewButton.className = 'rugcheck-warning-button rugcheck-warning-button-secondary';
+  viewButton.className = 'rugguard-warning-button rugguard-warning-button-secondary';
   viewButton.textContent = 'View on RugCheck';
   viewButton.href = `https://rugcheck.xyz/tokens/${tokenData.address}`;
   viewButton.target = '_blank';
@@ -553,7 +553,7 @@ function createWarningModal(tokenData) {
   
   // Proceed button
   const proceedButton = document.createElement('button');
-  proceedButton.className = 'rugcheck-warning-button rugcheck-warning-button-danger';
+  proceedButton.className = 'rugguard-warning-button rugguard-warning-button-danger';
   proceedButton.textContent = 'Proceed With Caution';
   proceedButton.onclick = removeWarningModal;
   
@@ -575,7 +575,7 @@ function createWarningModal(tokenData) {
  * Remove the warning modal
  */
 function removeWarningModal() {
-  const overlay = document.getElementById('rugcheck-warning-overlay');
+  const overlay = document.getElementById('rugguard-warning-overlay');
   if (overlay) {
     overlay.remove();
     warningModalShown = false;
@@ -589,8 +589,8 @@ function removeWarningModal() {
 function showSafeTokenNotification(tokenData) {
   // Create notification
   const notification = document.createElement('div');
-  notification.className = 'rugcheck-safe-notification';
-  notification.id = 'rugcheck-safe-notification';
+  notification.className = 'rugguard-safe-notification';
+  notification.id = 'rugguard-safe-notification';
   
   // Add content
   notification.innerHTML = `
@@ -598,9 +598,9 @@ function showSafeTokenNotification(tokenData) {
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
       <polyline points="22 4 12 14.01 9 11.01"></polyline>
     </svg>
-    <div class="rugcheck-safe-notification-content">
-      <div class="rugcheck-safe-notification-title" style="color: #111827; font-weight: 600;">Safe Token Detected</div>
-      <div class="rugcheck-safe-notification-message" style="color: #4b5563;">
+    <div class="rugguard-safe-notification-content">
+      <div class="rugguard-safe-notification-title" style="color: #111827; font-weight: 600;">Safe Token Detected</div>
+      <div class="rugguard-safe-notification-message" style="color: #4b5563;">
         ${tokenData.name || 'Token'} has been verified as safe by RugCheck
       </div>
     </div>
@@ -611,9 +611,9 @@ function showSafeTokenNotification(tokenData) {
   
   // Remove after 5 seconds
   setTimeout(() => {
-    const notificationElement = document.getElementById('rugcheck-safe-notification');
+    const notificationElement = document.getElementById('rugguard-safe-notification');
     if (notificationElement) {
-      notificationElement.style.animation = 'rugcheck-slide-out 0.3s ease-in forwards';
+      notificationElement.style.animation = 'rugguard-slide-out 0.3s ease-in forwards';
       setTimeout(() => {
         if (notificationElement.parentNode) {
           notificationElement.parentNode.removeChild(notificationElement);

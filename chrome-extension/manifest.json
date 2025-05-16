@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Solana RugCheck Monitor",
-  "version": "1.0.0",
-  "description": "Automatically monitors Solana token risk from RugCheck when visiting DEX and trading platforms.",
+  "name": "RugGuard",
+  "version": "1.17.0",
+  "description": "RugGuard: Automatically monitors Solana token risk when visiting DEX and trading platforms.",
   "icons": {
     "16": "images/icon-16.png",
     "48": "images/icon-48.png",
     "128": "images/icon-128.png"
   },
   "action": {
-    "default_title": "Solana RugCheck Monitor",
+    "default_title": "RugGuard",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "images/icon-16.png",
@@ -19,7 +19,10 @@
   },
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "alarms",
+    "notifications",
+    "tabs"
   ],
   "host_permissions": [
     "https://premium.rugcheck.xyz/*",
